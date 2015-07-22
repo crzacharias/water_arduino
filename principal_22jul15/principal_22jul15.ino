@@ -132,14 +132,6 @@ float sL = 2.0;   // intrinsic sensor precision: LDR
 float sM = 5;    // intrinsic sensor precision: MS - soil moisture
 float sU = 0.1;  // intrinsic sensor precision: US
 
-// Variables to time control
-String hour1;
-String mnt1;
-String sec1;
-byte dia1;
-byte month1;
-byte year1;
-
 // definition of variables  (used on decision steps)
 float Lcv = 400.; // LDR critical value
 float Mcv = 500.; // MS critical value
@@ -161,12 +153,21 @@ float avs;  // averaged value to make decision (turn on-off)
 // RTC
 byte sec, mnt, hour, week, dmonth, month, year; // date and time
 
+// Variables to time control
+String hour1, mnt1, sec1;
+byte day1, month1, year1;
+
 // definition of functions
 void startDS();  // to initialize DS18B20
 void printAddress(DeviceAddress deviceAddress);  // to read and print DS18B20 addresses
 float statistics(float X[], float sX);  // to calculate averaged values and standard deviations
 float sprinkler();  // to turn on and off sprinkler system
 float drip();   // to turn on anf off drip system
+void configureModule();
+void imprimeDadosModulo();
+byte decToBcd(byte val); 
+byte bcdToDec(byte val); 
+String insertZero(byte dado);
 
 /*
 // ******************* Repassar com Aildo: como descobrir o MAC address e o definir o IP??? Porque 33000????
@@ -215,7 +216,7 @@ void setup()
   dht1.begin(); dht2.begin(); dht3.begin();  // DHT22 initializing
   startDS();  // DS18B20 initialization
   Wire.begin(); //RTC DS1307 initialization
-  //configureModule();  //to set RTC module to a specific date and time
+  configureModule();  //to set RTC module to a specific date and time
 
 /*  
 // start the Ethernet connection and the server:
@@ -246,11 +247,7 @@ void loop()
   
   // Reading DHT22 3
   digitalWrite(DDHT3,HIGH); delay(500); //it is important a delay > 450ms
-  for(i=0; i<nread; i++)
-  {
-  T3[i] = dht3.readTemperature(); //reading humidity and temperature on DHT22_1
-  
-  }
+  for(i=0; i<nread; i++) {T3[i] = dht3.readTemperature();} //reading humidity and temperature on DHT22_1
   digitalWrite(DDHT3,LOW);  // turninf off DHT sensors
  
   Serial.print("T3: "); statistics(T3,sT); T3av = average; T3sd = uncert;
@@ -273,7 +270,7 @@ void loop()
 
   //day ligth?
   avs = (L1av + L2av)/2.; if (avs > Lcv) Lw = 1;  // 0 = night; 1 = day
-Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); Serial.print(Mw); Serial.print("\t"); Serial.println(Tw);
+  Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); Serial.print(Mw); Serial.print("\t"); Serial.println(Tw);
 
   // reading MSs
   digitalWrite(MS1,HIGH); digitalWrite(MS2,HIGH); digitalWrite(MS3,HIGH); digitalWrite(MS4,HIGH); // turning Moisture Sensors (MS) on      
@@ -293,9 +290,8 @@ Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); S
   
   //Soil moisture?
   avs = (M1av + M2av + M3av + M4av)/4.; if (avs > Mcv) Mw = 1;  // 0 = wet ; 1 = dry
-Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); Serial.print(Mw); Serial.print("\t"); Serial.println(Tw);
+  Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); Serial.print(Mw); Serial.print("\t"); Serial.println(Tw);
   if (Lw == 1 && Mw == 1) {Serial.println("... "); drip();}  // drip system
-
 
   // Reading DHT22
   digitalWrite(DDHT,HIGH); delay(500); //it is important a delay > 450ms
@@ -316,8 +312,6 @@ Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); S
   statistics(T2,sT); T2av = average; T2sd = uncert;  
   // end reading DHT
 
-
-
   // reading DS18B20
   digitalWrite(DDS,HIGH); delay(500);  // turning DS on    
   sensors.requestTemperatures(); // call sensors.requestTemperatures() to issue a global temperature request to all devices on the bus
@@ -326,7 +320,6 @@ Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); S
   digitalWrite(DDS,LOW);   // turning DS18B20 off
   // end reading DS18B20
 
-  
 //  Serial.print("Ta: "); 
   statistics(TD1,sTD1); TD1av = average; TD1sd = uncert; 
 //  Serial.print("Tb: "); 
@@ -334,7 +327,7 @@ Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); S
   
   //Air Temperature
   avs = (TD1av + TD2av)/2.; if (avs > Tcv) Tw = 1;  // 0 = cold; 1 = warm
-Serial.print(avs,1); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); Serial.print(Mw); Serial.print("\t"); Serial.println(Tw);
+  Serial.print(avs,1); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); Serial.print(Mw); Serial.print("\t"); Serial.println(Tw);
   if (Lw == 1 && Tw == 1) {Serial.println("... "); sprinkler();} // sprinkler system
 
   Serial.println(" ");
@@ -392,37 +385,35 @@ Serial.print(avs,1); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); S
 //        arq = SD.open("res.txt",FILE_WRITE);
         arq = SD.open(arquivo,FILE_WRITE);
         if(arq) {      
-        Serial.println("Escrevendo no cartao..."); 
-        arq.println("-----------------------------------------------------------------------------------------"); 
-        arq.print("Data: "); arq.print(dia1); arq.print("/"); arq.print(month1); arq.print("/"); arq.print(year1); arq.print("  ");
-        arq.print(hour1); arq.print(":"); arq.print(mnt1); arq.print(":"); arq.println(sec1); arq.println(" ");
-        
-        arq.print("US: "); arq.print(USav); arq.print(" +- "); arq.print(USsd, 1); arq.print("\t"); arq.print("T3: "); arq.print(T3av); arq.print(" +- "); arq.println(T3sd, 1);
-        arq.print("L1: "); arq.print(L1av); arq.print(" +- "); arq.println(L1sd, 1);// arq.println(" ");  
-        arq.print("TD1: "); arq.print(TD1av); arq.print(" +- "); arq.println(TD1sd, 1); //arq.println(" ");
-        arq.print("TD2: "); arq.print(TD2av); arq.print(" +- "); arq.println(TD2sd, 1);// arq.println(" ");
-        arq.print("H1: "); arq.print(H1av); arq.print(" +- "); arq.println(H1sd, 1); //arq.println(" ");
-        arq.print("H2: "); arq.print(H2av); arq.print(" +- "); arq.println(H2sd, 1);// arq.println(" ");
-        arq.print("M1: "); arq.print(M1av); arq.print(" +- "); arq.println(M1sd, 1); //arq.println(" ");       
-        arq.print("M2: "); arq.print(M2av); arq.print(" +- "); arq.println(M2sd, 1);// arq.println(" ");       
-        arq.print("M3: "); arq.print(M3av); arq.print(" +- "); arq.println(M3sd, 1);// arq.println(" ");   
-        arq.print("M4: "); arq.print(M4av); arq.print(" +- "); arq.println(M4sd, 1); arq.println(" ");        
-     
-       if (Lw == 1 && Mw == 1) {arq.println("Drip foi ativado ");} 
-       if (Lw == 1 && Tw == 1) {arq.println("Sprinkler foi ativado ");} // sprinkler system
-
-     
-        arq.close();
-        Serial.println(" Feito");Serial.println(" ");
-        } else {
-           Serial.println("Nao foi possivel abrir o txt");
-        }
+          Serial.println("Escrevendo no cartao..."); 
+          arq.println("-----------------------------------------------------------------------------------------"); 
+          arq.print("Date: "); arq.print(day1); arq.print("/"); arq.print(month1); arq.print("/"); arq.print(year1); arq.print("  ");
+          arq.print(hour1); arq.print(":"); arq.print(mnt1); arq.print(":"); arq.println(sec1); arq.println(" ");
+          
+          arq.print("US: "); arq.print(USav); arq.print(" +- "); arq.print(USsd, 1); arq.print("\t"); arq.print("T3: "); arq.print(T3av); arq.print(" +- "); arq.println(T3sd, 1);
+          arq.print("L1: "); arq.print(L1av); arq.print(" +- "); arq.println(L1sd, 1);
+          arq.print("TD1: "); arq.print(TD1av); arq.print(" +- "); arq.println(TD1sd, 1);
+          arq.print("TD2: "); arq.print(TD2av); arq.print(" +- "); arq.println(TD2sd, 1);
+          arq.print("H1: "); arq.print(H1av); arq.print(" +- "); arq.println(H1sd, 1); 
+          arq.print("H2: "); arq.print(H2av); arq.print(" +- "); arq.println(H2sd, 1);
+          arq.print("M1: "); arq.print(M1av); arq.print(" +- "); arq.println(M1sd, 1);
+          arq.print("M2: "); arq.print(M2av); arq.print(" +- "); arq.println(M2sd, 1);
+          arq.print("M3: "); arq.print(M3av); arq.print(" +- "); arq.println(M3sd, 1);
+          arq.print("M4: "); arq.print(M4av); arq.print(" +- "); arq.println(M4sd, 1);
+          arq.println(" ");        
+       
+         if (Lw == 1 && Mw == 1) {arq.println("Drip foi ativado ");} 
+         if (Lw == 1 && Tw == 1) {arq.println("Sprinkler foi ativado ");} // sprinkler system
+       
+          arq.close();
+          Serial.println(" Feito");Serial.println(" ");
+        } 
+        else {Serial.println("Nao foi possivel abrir o txt");}
          
  Lw = Mw = Tw = 0; 
 }  // end loop
 
 //***************** functions *******************************************************************************
-
 
 // function to initialize DS18B20  *****************************************************************
 void startDS()
@@ -579,16 +570,16 @@ void configureModule()  // Date and time adjustment.
   // setting and writing data. For data less than 10, only one digit must be typed (ex: 9 hour = 9, not 09)
   // To write data in the RTC module, we should convert data from decimal to binary
   sec = 0;  Wire.write(decToBcd(sec));      //converting seconds
-  mnt = 47; Wire.write(decToBcd(mnt));      //converting minutes.
+  mnt = 0; Wire.write(decToBcd(mnt));      //converting minutes.
   hour = 8; Wire.write(decToBcd(hour));     //converting hours.
-  week = 3; Wire.write(decToBcd(week));     //converting week day: sunday == "0"
-  dmonth = 1; Wire.write(decToBcd(dmonth)); //converting day
+  week = 4; Wire.write(decToBcd(week));     //converting week day: sunday == "0"
+  dmonth = 23; Wire.write(decToBcd(dmonth)); //converting day
   month = 7; Wire.write(decToBcd(month));   //converting month
   year = 15; Wire.write(decToBcd(year));    //converting year
   Wire.endTransmission();                   //closing recording mode
 }
 
-void imprimeDadosModulo() // to read date and time recorded at RTC module, to print them in the Serial Monitor.
+void imprimeDadosModulo() // to read date and time recorded at RTC module, and print them in the Serial Monitor.
 {
   String adjustSec;  // these strings will be used to write date and time with 2 digits:
   String adjustMin;  // ex: 9:58:5 -> 09:58:05
@@ -633,7 +624,7 @@ void imprimeDadosModulo() // to read date and time recorded at RTC module, to pr
   }
   
   Serial.print("Current date: ");
-  adjustDay += insertZero(dmonth); dia1 = dmonth;
+  adjustDay += insertZero(dmonth); day1 = dmonth;
   Serial.print(adjustDay); Serial.print("/");
   adjustMonth += insertZero(month); month1 = month;
   Serial.print(adjustMonth); Serial.print("/");
