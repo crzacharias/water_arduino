@@ -613,14 +613,11 @@ void imprimeDadosModulo() // to read date and time recorded at RTC module, to pr
  
   Serial.println("-------------------------------------------------------------------------------------------");
   Serial.print("Current time: ");
-  adjustHour += insertZero(hour); 
-  hour1 = adjustHour;
+  adjustHour += insertZero(hour); hour1 = adjustHour;
   Serial.print(adjustHour); Serial.print(":");
-  adjustMin += insertZero(mnt);
-  mnt1 = adjustMin;
+  adjustMin += insertZero(mnt); mnt1 = adjustMin;
   Serial.print(adjustMin); Serial.print(":");
-  adjustSec += insertZero(sec); 
-  sec1 = adjustSec;
+  adjustSec += insertZero(sec); sec1 = adjustSec;
   Serial.println(adjustSec);
   
   Serial.print("Day of the week: ");
