@@ -626,30 +626,23 @@ void imprimeDadosModulo() // to read date and time recorded at RTC module, to pr
   Serial.print("Day of the week: ");
   switch(week)
   {
-    case 0:Serial.println("Domingo"); break; //se a variável week for zero imprima na tela "Domingo"    
-    case 1:Serial.println("Segunda-feira"); break; //idem ao anterior
-    case 2:Serial.println("Terca-feira"); break;   //idem
-    case 3:Serial.println("Quarta-feira"); break;  //idem
-    case 4:Serial.println("Quinta-feira"); break;  //idem
-    case 5:Serial.println("Sexta-feira"); break;   //idem
-    case 6:Serial.println("Sabado"); break;        //idem
+    case 0: Serial.println("Sunday"); break; 
+    case 1: Serial.println("Monday"); break;
+    case 2: Serial.println("Tuesday"); break;
+    case 3: Serial.println("Wednesday"); break;
+    case 4: Serial.println("Thursday"); break; 
+    case 5: Serial.println("Friday"); break;   
+    case 6: Serial.println("Saturday"); break; 
   }
   
-  //Imprimindo os dois dígitos das datas separadas por uma barra.
-  Serial.print("Data: ");
-  //chmando a função ajustaZero para o caso de dados gravado no módulo com apenas um dígito.
+  Serial.print("Current date: ");
   adjustDay += insertZero(dmonth); dia1 = dmonth;
-  Serial.print(adjustDay);
-  Serial.print("/");
-  //chmando a função ajustaZero para o caso de dados gravado no módulo com apenas um dígito.
+  Serial.print(adjustDay); Serial.print("/");
   adjustMonth += insertZero(month); month1 = month;
-  Serial.print(adjustMonth);
-  Serial.print("/");
+  Serial.print(adjustMonth); Serial.print("/");
   Serial.println(year); year1 = year;
- 
-  Serial.println(); //salta uma linha.
+  Serial.println();
 }
-
 
 byte decToBcd(byte val)  // to convert decimal to binary data
 { return ( (val/10*16) + (val%10) ); }
