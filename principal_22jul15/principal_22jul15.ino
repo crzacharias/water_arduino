@@ -216,7 +216,7 @@ void setup()
   dht1.begin(); dht2.begin(); dht3.begin();  // DHT22 initializing
   startDS();  // DS18B20 initialization
   Wire.begin(); //RTC DS1307 initialization
-  configureModule();  //to set RTC module to a specific date and time
+//  configureModule();  //to set RTC module to a specific date and time
 
 /*  
 // start the Ethernet connection and the server:
@@ -271,6 +271,7 @@ void loop()
   //day ligth?
   avs = (L1av + L2av)/2.; if (avs > Lcv) Lw = 1;  // 0 = night; 1 = day
   Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); Serial.print(Mw); Serial.print("\t"); Serial.println(Tw);
+  Serial.println(" ");
 
   // reading MSs
   digitalWrite(MS1,HIGH); digitalWrite(MS2,HIGH); digitalWrite(MS3,HIGH); digitalWrite(MS4,HIGH); // turning Moisture Sensors (MS) on      
@@ -292,6 +293,7 @@ void loop()
   avs = (M1av + M2av + M3av + M4av)/4.; if (avs > Mcv) Mw = 1;  // 0 = wet ; 1 = dry
   Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); Serial.print(Mw); Serial.print("\t"); Serial.println(Tw);
   if (Lw == 1 && Mw == 1) {Serial.println("... "); drip();}  // drip system
+  Serial.println(" ");
 
   // Reading DHT22
   digitalWrite(DDHT,HIGH); delay(500); //it is important a delay > 450ms
@@ -484,7 +486,7 @@ float statistics(float X[], float sX)
   uncert = uncert/(nread -1);  // variance
   uncert = sqrt(uncert + sX*sX);  // adding sensor precision
         
-// Serial.print(average,1); Serial.print(" +- "); Serial.println(uncert,1);
+ Serial.print(average,1); Serial.print(" +- "); Serial.println(uncert,1);
 }
 
 
@@ -570,8 +572,8 @@ void configureModule()  // Date and time adjustment.
   // setting and writing data. For data less than 10, only one digit must be typed (ex: 9 hour = 9, not 09)
   // To write data in the RTC module, we should convert data from decimal to binary
   sec = 0;  Wire.write(decToBcd(sec));      //converting seconds
-  mnt = 0; Wire.write(decToBcd(mnt));      //converting minutes.
-  hour = 8; Wire.write(decToBcd(hour));     //converting hours.
+  mnt = 43; Wire.write(decToBcd(mnt));      //converting minutes.
+  hour = 7; Wire.write(decToBcd(hour));     //converting hours.
   week = 4; Wire.write(decToBcd(week));     //converting week day: sunday == "0"
   dmonth = 23; Wire.write(decToBcd(dmonth)); //converting day
   month = 7; Wire.write(decToBcd(month));   //converting month
