@@ -134,14 +134,14 @@ float sU = 0.1;  // intrinsic sensor precision: US
 
 // definition of variables  (used on decision steps)
 float Lcv = 400.; // LDR critical value
-float Mcv = 500.; // MS critical value
+float Mcv = 700.; // MS critical value
 float Tcv = 35.; // DS critical value
 
 // delay time in each step
 int delaydripon  = 90000;  // drip system on (watering): 1.5 minutes
 int delaydripoff = 600000;  // drip system off (diffusion): 10 minutes
-float sptimeon  = 120.;   // (in SECONDS) sprinkler system on (watering): 2 minutes
-float sptimeoff = 120.;   // (in SECONDS) sprinkler system off (estabilizing): 2 minutes
+float sptimeon  = 12; //0.;   // (in SECONDS) sprinkler system on (watering): 2 minutes
+float sptimeoff = 12; //0.;   // (in SECONDS) sprinkler system off (estabilizing): 2 minutes
 
 int Lw = 0;  // LDR state: 0 = night; 1 = day
 int Mw = 0;  // MS state: 0 = wet ; 1 = dry
