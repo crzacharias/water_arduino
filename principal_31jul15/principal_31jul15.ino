@@ -109,7 +109,7 @@ DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Tem
 DeviceAddress DS0, DS1; // we are using only 2 devices (DS18B20)
 
 // definition of variables  (used on measurements and statistics)
-#define nread 10  // sample size to statistics (average value and standard deviation)
+#define nread 50  // sample size to statistics (average value and standard deviation)
 int i, j;       // integer counter (auxiliaries)
 int ww;         //used whenever a MS-sensor is ignored
 int wd;         //used whenever a DS-sensor is ignored
@@ -251,7 +251,7 @@ void loop()
               
     // reading US
     digitalWrite(DUS, HIGH); delay(5000); //turning US on
-    for(i=0; i<nread; i++)   {US[i] = (ultrasonic.Ranging(CM)); Serial.print(US[i],1); Serial.print(" ");	// reading Ultrasound } 
+    for(i=0; i<nread; i++)   {US[i] = (ultrasonic.Ranging(CM)); // Serial.print(US[i],1); Serial.print(" ");	// reading Ultrasound } 
        delay(500);}
     digitalWrite(DUS, LOW); // turning US off
      
@@ -459,6 +459,9 @@ void loop()
         else {Serial.println("Nao foi possivel abrir o txt");}
          
  Lw = Mw = Tw = 0; 
+ 
+ delay(1800000);
+ 
 }  // end loop
 
 //***************** functions *******************************************************************************
