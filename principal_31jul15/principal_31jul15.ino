@@ -1,4 +1,4 @@
-/* 
+  /* 
 This code controls the watering system inside a greenhouse and surroundings. 
 The watering system consists in:
 (1) drip tubing (4 tubes, holes at 20 cm distance)
@@ -87,7 +87,9 @@ Ultrasonic ultrasonic(TRIGGER, ECHO);  // seting Ultrasound device
 
 //#define CS 4	       	  //standard pin to Arduino, to use SD card
 #define arquivo "data.txt" //file name, to be saved on SD card
-File arq;                // pointer to file (saved on SD card)
+#define arquivo2 "007.txt"  //L
+File arq;     // pointer to file (saved on SD card)
+File arq2; //L  Segundo arquivo SD - 007
 
 #define DDHT3 8       // DHT3 Vcc (used together the Ultrasound sensor)
 #define DHT22_3 9     // DHT22_1 data (air temperature, sound transmission)
@@ -107,8 +109,11 @@ DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Tem
 DeviceAddress DS0, DS1; // we are using only 2 devices (DS18B20)
 
 // definition of variables  (used on measurements and statistics)
-#define nread 5  // sample size to statistics (average value and standard deviation)
-int i, j;        // integer counter (auxiliaries)
+#define nread 10  // sample size to statistics (average value and standard deviation)
+int i, j;       // integer counter (auxiliaries)
+int ww;         //used whenever a MS-sensor is ignored
+int wd;         //used whenever a DS-sensor is ignored
+
 
 float H1[nread], H2[nread], T1[nread], T2[nread];  // auxiliary vectors to read DHTs
 float TD1[nread], TD2[nread];   // auxiliary vectors to read DS18B20s
@@ -134,14 +139,14 @@ float sU = 0.1;  // intrinsic sensor precision: US
 
 // definition of variables  (used on decision steps)
 float Lcv = 400.; // LDR critical value
-float Mcv = 600.; // MS critical value
+float Mcv = 700.; // MS critical value
 float Tcv = 35.; // DS critical value
 
 // delay time in each step
 int delaydripon  = 90000;  // drip system on (watering): 1.5 minutes
 int delaydripoff = 600000;  // drip system off (diffusion): 10 minutes
-float sptimeon  = 120; //0.;   // (in SECONDS) sprinkler system on (watering): 2 minutes
-float sptimeoff = 120; //0.;   // (in SECONDS) sprinkler system off (estabilizing): 2 minutes
+float sptimeon  = 120.;   // (in SECONDS) sprinkler system on (watering): 2 minutes
+float sptimeoff = 120.;   // (in SECONDS) sprinkler system off (estabilizing): 2 minutes
 
 int Lw = 0;  // LDR state: 0 = night; 1 = day
 int Mw = 0;  // MS state: 0 = wet ; 1 = dry
@@ -235,105 +240,139 @@ void loop()
 {
   // Data reading (RTC DS1307)   
   imprimeDadosModulo();    //chamando a função para imprimir na tela os dados gravados no módulo
-              
-  // reading US
-  digitalWrite(DUS, HIGH); delay(5000); //turning US on
-  for(i=0; i<nread; i++)   {US[i] = (ultrasonic.Ranging(CM)); Serial.print(US[i],1); Serial.print(" ");	// reading Ultrasound } 
-     delay(500);}
-  digitalWrite(DUS, LOW); // turning US off
-   
-  Serial.print("US: ");statistics(US,sU); USav = average; USsd = uncert;
-  Serial.print(average,1); Serial.print(" +- "); Serial.println(uncert,1);
   
-  // Reading DHT22 3
-  digitalWrite(DDHT3,HIGH); delay(500); //it is important a delay > 450ms
-  for(i=0; i<nread; i++) {T3[i] = dht3.readTemperature();} //reading humidity and temperature on DHT22_1
-  digitalWrite(DDHT3,LOW);  // turninf off DHT sensors
- 
-  Serial.print("T3: "); statistics(T3,sT); T3av = average; T3sd = uncert;
-  Serial.print(average,1); Serial.print(" +- "); Serial.println(uncert,1);  Serial.println(" "); 
-
+  arq2 = SD.open(arquivo2,FILE_WRITE);  //L
+  if(arq2) {      
+    Serial.println("007 on"); 
+//    arq2.println("-----------------------------------------------------------------------------------------"); 
+    arq2.print("Date: "); arq2.print(day1); arq2.print("/"); arq2.print(month1); arq2.print("/"); arq2.print(year1); arq2.print(" - ");
+    arq2.print(hour1); arq2.print(":"); arq2.print(mnt1); arq2.print(":"); arq2.println(sec1);
+  
+              
+    // reading US
+    digitalWrite(DUS, HIGH); delay(5000); //turning US on
+    for(i=0; i<nread; i++)   {US[i] = (ultrasonic.Ranging(CM)); Serial.print(US[i],1); Serial.print(" ");	// reading Ultrasound } 
+       delay(500);}
+    digitalWrite(DUS, LOW); // turning US off
+     
+    Serial.print("US: ");statistics(US,sU); USav = average; USsd = uncert;
+    Serial.print(average,1); Serial.print(" +- "); Serial.println(uncert,1);
+    
+    // Reading DHT22 3
+    digitalWrite(DDHT3,HIGH); delay(500); //it is important a delay > 450ms
+    for(i=0; i<nread; i++) {T3[i] = dht3.readTemperature();} //reading humidity and temperature on DHT22_1
+    digitalWrite(DDHT3,LOW);  // turninf off DHT sensors
+   
+    Serial.print("T3: "); statistics(T3,sT); T3av = average; T3sd = uncert;
+    Serial.print(average,1); Serial.print(" +- "); Serial.println(uncert,1);  Serial.println(" "); 
+  
                          
 // Data reading (2xDHT,2xDS18B20, 2xLDR, 4xMS)
 
-  // reading LDRs
-  digitalWrite(DLDR1,HIGH); digitalWrite(DLDR2,HIGH);   // turning LDRs on   
-  for(i=0; i<nread; i++)   { L1[i] = analogRead(LDR1); L2[i] = analogRead(LDR2); } 
-  delay(3000);
-  digitalWrite(DLDR1,LOW); digitalWrite(DLDR2,LOW);   // turning LDRs off   
-  
-//  Serial.print("L1: "); 
-  statistics(L1,sL); L1av = average; L1sd = uncert; 
-//  Serial.print("L2: "); 
-  statistics(L2,sL); L2av = average; L2sd = uncert; 
+    // reading LDRs
+    digitalWrite(DLDR1,HIGH); digitalWrite(DLDR2,HIGH);   // turning LDRs on   
+    for(i=0; i<nread; i++)   { L1[i] = analogRead(LDR1); L2[i] = analogRead(LDR2); } 
+    delay(3000);
+    digitalWrite(DLDR1,LOW); digitalWrite(DLDR2,LOW);   // turning LDRs off   
+
+    statistics(L1,sL); L1av = average; L1sd = uncert; 
+    statistics(L2,sL); L2av = average; L2sd = uncert; 
   // end reading LDRs
 
-  //day ligth?
-  avs = (L1av + L2av)/2.; if (avs > Lcv) Lw = 1;  // 0 = night; 1 = day
-  Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); Serial.print(Mw); Serial.print("\t"); Serial.println(Tw);
-  Serial.println(" ");
+// day ligth?
+// Only L2 (upper sensor) is considered to make decision. Maybe its standard deviation can be used to detect problems in sensor!
+//    avs = (L1av + L2av)/2.; if (avs > Lcv) Lw = 1;  // 0 = night; 1 = day
+    if (L2av > Lcv) Lw = 1;  // 0 = night; 1 = day
+    Serial.print("LDR: "); Serial.print(L2av,0); Serial.print("\t"); 
+    if (Lw == 0) {Serial.print("night");} else {Serial.print(" day ");} Serial.print("\t"); 
+    if (Mw == 0) {Serial.print(" wet ");} else {Serial.print(" dry ");} Serial.print("\t"); 
+    if (Tw == 0) {Serial.println(" cold");} else {Serial.println(" warm");} 
 
-  // reading MSs
-  digitalWrite(MS1,HIGH); digitalWrite(MS2,HIGH); digitalWrite(MS3,HIGH); digitalWrite(MS4,HIGH); // turning Moisture Sensors (MS) on      
-  delay(1000); // 1 second delay - to establish electrical measurements
-  for(i=0; i<nread; i++) {M1[i] = analogRead(MSd1); M2[i] = analogRead(MSd2); M3[i] = analogRead(MSd3); M4[i] = analogRead(MSd4);} delay(5000);
-  digitalWrite(MS1,LOW); digitalWrite(MS2,LOW); digitalWrite(MS3,LOW); digitalWrite(MS4,LOW); // turning Moisture Sensors (MS) off
+// reading MS´s
+    digitalWrite(MS1,HIGH); digitalWrite(MS2,HIGH); digitalWrite(MS3,HIGH); digitalWrite(MS4,HIGH); // turning Moisture Sensors (MS) on      
+    delay(1000); // 1 second delay - to establish electrical measurements
+    for(i=0; i<nread; i++) {M1[i] = analogRead(MSd1); M2[i] = analogRead(MSd2); M3[i] = analogRead(MSd3); M4[i] = analogRead(MSd4);} delay(5000);
+    digitalWrite(MS1,LOW); digitalWrite(MS2,LOW); digitalWrite(MS3,LOW); digitalWrite(MS4,LOW); // turning Moisture Sensors (MS) off
+    
+    statistics(M1,sM); M1av = average; M1sd = uncert; 
+    statistics(M2,sM); M2av = average; M2sd = uncert; 
+    statistics(M3,sM); M3av = average; M3sd = uncert; 
+    statistics(M4,sM); M4av = average; M4sd = uncert; 
+    // end reading MSs
   
-//  Serial.print("M1: "); 
-  statistics(M1,sM); M1av = average; M1sd = uncert; 
-//  Serial.print("M2: "); 
-  statistics(M2,sM); M2av = average; M2sd = uncert; 
-//  Serial.print("M3: "); 
-  statistics(M3,sM); M3av = average; M3sd = uncert; 
-//  Serial.print("M4: "); 
-  statistics(M4,sM); M4av = average; M4sd = uncert; 
-  // end reading MSs
+  //Soil moisture
+   // All MS-sensor > 900 and < 100 (arbitrary values) will be ignored.
+   ww = 0;
+   if ((M1av>900) || (M1av<100)) {arq2.print("Error M1 "); ww++; M1av=0;}
+   if ((M2av>900) || (M2av<100)) {arq2.print("Error M2 "); ww++; M2av=0;}
+   if ((M3av>900) || (M3av<100)) {arq2.print("Error M3 "); ww++; M3av=0;}
+   if ((M4av>900) || (M4av<100)) {arq2.print("Error M4 "); ww++; M4av=0;}
+   
+   if (ww<4) {
+     avs = (M1av + M2av + M3av + M4av)/(4-ww);
+     if (avs > Mcv) Mw = 1; // 0 = wet ; 1 = dry
+     Serial.print("MS : "); Serial.print(avs,0); Serial.print("\t"); 
+     if (Lw == 0) {Serial.print("night");} else {Serial.print(" day ");} Serial.print("\t"); 
+     if (Mw == 0) {Serial.print(" wet ");} else {Serial.print(" dry ");} Serial.print("\t"); 
+     if (Tw == 0) {Serial.println(" cold");} else {Serial.println(" warm");} 
+
+     if (Lw == 1 && Mw == 1) {Serial.println("... "); drip();}  // drip system
+   }
+   else {Serial.print ("MS-sensors in problem!!"); arq2.print("All MS-sensors are in problem!!");}
+
+/* DHT sensors were eliminated 
+   // Reading DHT22
+   digitalWrite(DDHT,HIGH); delay(500); //it is important a delay > 450ms
+   for(i=0; i<nread; i++)
+   {
+     H1[i] = dht1.readHumidity(); T1[i] = dht1.readTemperature(); //reading humidity and temperature on DHT22_1
+     H2[i] = dht2.readHumidity(); T2[i] = dht2.readTemperature(); //reading humidity and temperature on DHT22_2
+   }
+   digitalWrite(DDHT,LOW);  // turninf off DHT sensors
   
-  //Soil moisture?
-  avs = (M1av + M2av + M3av + M4av)/4.; if (avs > Mcv) Mw = 1;  // 0 = wet ; 1 = dry
-  Serial.print(avs,0); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); Serial.print(Mw); Serial.print("\t"); Serial.println(Tw);
-  if (Lw == 1 && Mw == 1) {Serial.println("... "); drip();}  // drip system
-  Serial.println(" ");
-
-/*  // Reading DHT22
-  digitalWrite(DDHT,HIGH); delay(500); //it is important a delay > 450ms
-  for(i=0; i<nread; i++)
-  {
-    H1[i] = dht1.readHumidity(); T1[i] = dht1.readTemperature(); //reading humidity and temperature on DHT22_1
-    H2[i] = dht2.readHumidity(); T2[i] = dht2.readTemperature(); //reading humidity and temperature on DHT22_2
-  }
-  digitalWrite(DDHT,LOW);  // turninf off DHT sensors
-
-//  Serial.print("H1: "); 
-  statistics(H1,sH); H1av = average; H1sd = uncert;  
-//  Serial.print("H2: "); 
-  statistics(H2,sH); H2av = average; H2sd = uncert;  
-//  Serial.print("T1: "); 
-  statistics(T1,sT); T1av = average; T1sd = uncert;  
-//  Serial.print("T2: "); 
-  statistics(T2,sT); T2av = average; T2sd = uncert;  
-  // end reading DHT
+   statistics(H1,sH); H1av = average; H1sd = uncert;  
+   statistics(H2,sH); H2av = average; H2sd = uncert;  
+   statistics(T1,sT); T1av = average; T1sd = uncert;  
+   statistics(T2,sT); T2av = average; T2sd = uncert;  
+   // end reading DHT
 */
-  // reading DS18B20
-  digitalWrite(DDS,HIGH); delay(500);  // turning DS on    
-  sensors.requestTemperatures(); // call sensors.requestTemperatures() to issue a global temperature request to all devices on the bus
-  for(i=0; i<nread; i++) {TD1[i] = sensors.getTempC(DS0); TD2[i] = sensors.getTempC(DS1);} //reading temperature on DS18B20s
-  delay(3000);
-  digitalWrite(DDS,LOW);   // turning DS18B20 off
-  // end reading DS18B20
 
-//  Serial.print("Ta: "); 
-  statistics(TD1,sTD1); TD1av = average; TD1sd = uncert; 
-//  Serial.print("Tb: "); 
-  statistics(TD2,sTD2); TD2av = average; TD2sd = uncert; 
-  
-  //Air Temperature
-  avs = (TD1av + TD2av)/2.; if (avs > Tcv) Tw = 1;  // 0 = cold; 1 = warm
-  Serial.print(avs,1); Serial.print("\t"); Serial.print(Lw); Serial.print("\t"); Serial.print(Mw); Serial.print("\t"); Serial.println(Tw);
-  if (Lw == 1 && Tw == 1) {Serial.println("... "); sprinkler();} // sprinkler system
 
-  Serial.println(" ");
+   // reading DS18B20   
+   digitalWrite(DDS,HIGH); delay(500);  // turning DS on 
+   wd = 0;
+   avs = 0.;
+   // Error in DS can be identified asking it about its address
+   sensors.requestTemperatures(); // call sensors.requestTemperatures() to issue a global temperature request to all devices on the bus  
+   if (!sensors.getAddress(DS0, 0)) {arq2.print("Error DS0 "); TD1av = 0; TD1sd = 0; wd++; }
+   else{ 
+     for(i=0; i<nread; i++) {TD1[i] = sensors.getTempC(DS0);} //reading temperature on DS18B20s
+     statistics(TD1,sTD1); TD1av = average; TD1sd = uncert; avs += TD1av;
+   }
   
+   if (!sensors.getAddress(DS1, 0)) {arq2.print("Error DS1 "); TD2av = 0; TD2sd = 0; wd++;}
+   else{ 
+     for(i=0; i<nread; i++) {TD2[i] = sensors.getTempC(DS1);} //reading temperature on DS18B20s
+     statistics(TD2,sTD2); TD2av = average; TD2sd = uncert; avs += TD2av;
+   }
+   digitalWrite(DDS,LOW);   // turning DS18B20 off
+
+   //Air Temperature
+   if (wd == 2) {Serial.print("both DS in trouble!!");}
+   else{ 
+     if ((wd == 0) && (abs(TD1av-TD2av)>=2)) {arq2.print("delta_T > 2: "); arq2.print(TD1av); arq2.print(TD2av);}  //if Delta_T > 2, DS in problem
+     avs /= (2-wd);
+   }
+
+     if (avs > Tcv) Tw = 1; // 0 = cold ; 1 = warm
+     Serial.print("T  : "); Serial.print(avs,1); Serial.print("\t"); 
+     if (Lw == 0) {Serial.print("night");} else {Serial.print(" day ");} Serial.print("\t"); 
+     if (Mw == 0) {Serial.print(" wet ");} else {Serial.print(" dry ");} Serial.print("\t"); 
+     if (Tw == 0) {Serial.println(" cold");} else {Serial.println(" warm");} 
+     if (Lw == 1 && Tw == 1) {Serial.println("... "); sprinkler();} // sprinkler system
+   // end reading DS18B20
+
+
 /*
    // estabelecendo contato com a internet
    EthernetClient client = server.available();  //Verifica se tem dados disponíveis no servidor (Arduino)
@@ -383,6 +422,13 @@ void loop()
        } //end if(client)
  
 */
+
+          arq2.close();  //L
+          Serial.println("007 off");Serial.println(" ");
+        } 
+        else {Serial.println("Error 007");}
+
+//L  Escrever o cabecalho do arq no void setup; escrever os valores utilizando /t para facilitar a sua leitura no excel
 
 //        arq = SD.open("res.txt",FILE_WRITE);
         arq = SD.open(arquivo,FILE_WRITE);
@@ -493,7 +539,7 @@ float statistics(float X[], float sX)
 //z? implementar delays como parametros
 float drip()  
 {  
-  Serial.println("Drip time! ");
+  Serial.println("Dropping time! ");
   digitalWrite(Vr2, HIGH); delay(500);
   digitalWrite(Vpp, HIGH);  // pump relay
   digitalWrite(Vr1, HIGH);  // board relay
