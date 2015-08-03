@@ -439,11 +439,11 @@ void loop()
           arq.print(hour1); arq.print(":"); arq.print(mnt1); arq.print(":"); arq.println(sec1); arq.println(" ");
           
           arq.print("US: "); arq.print(USav); arq.print(" +- "); arq.print(USsd, 1); arq.print("\t"); arq.print("T3: "); arq.print(T3av); arq.print(" +- "); arq.println(T3sd, 1);
-          arq.print("L1: "); arq.print(L1av); arq.print(" +- "); arq.println(L1sd, 1);
-          arq.print("TD1: "); arq.print(TD1av); arq.print(" +- "); arq.println(TD1sd, 1);
-          arq.print("TD2: "); arq.print(TD2av); arq.print(" +- "); arq.println(TD2sd, 1);
-          arq.print("H1: "); arq.print(H1av); arq.print(" +- "); arq.println(H1sd, 1); 
-          arq.print("H2: "); arq.print(H2av); arq.print(" +- "); arq.println(H2sd, 1);
+          arq.print("L2: "); arq.print(L2av); arq.print(" +- "); arq.println(L1sd, 1);
+          arq.print("TD1: "); arq.print(TD1av,1); arq.print(" +- "); arq.println(TD1sd, 1);
+          arq.print("TD2: "); arq.print(TD2av,1); arq.print(" +- "); arq.println(TD2sd, 1);
+ //         arq.print("H1: "); arq.print(H1av); arq.print(" +- "); arq.println(H1sd, 1); 
+ //         arq.print("H2: "); arq.print(H2av); arq.print(" +- "); arq.println(H2sd, 1);
           arq.print("M1: "); arq.print(M1av); arq.print(" +- "); arq.println(M1sd, 1);
           arq.print("M2: "); arq.print(M2av); arq.print(" +- "); arq.println(M2sd, 1);
           arq.print("M3: "); arq.print(M3av); arq.print(" +- "); arq.println(M3sd, 1);
